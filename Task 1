@@ -1,0 +1,162 @@
+import os
+
+# Global configuration
+INVENTORY_FILE = "inventory.txt"
+
+# Utility function to load products from the file
+def load_products():
+    products = {}
+    if os.path.exists(INVENTORY_FILE):
+        with open(INVENTORY_FILE, "r") as file:
+            for line in file:
+                try:
+                    name, price, quantity = line.strip().split(",")
+                    products[name] = {"price": float(price), "quantity": int(quantity)}
+                except ValueError:
+                    print(f"Skipping invalid line in inventory file: {line}")
+    else:
+        print(f"File '{INVENTORY_FILE}' not found. Starting with an empty inventory.")
+    return products
+
+# Utility function to save products to the file
+def save_products(products):
+    with open(INVENTORY_FILE, "w") as file:
+        for name, info in products.items():
+            file.write(f"{name},{info['price']},{info['quantity']}\n")
+
+# Display products in a simple table format
+def display_products(products, sort_by=None):
+    if not products:
+        print("No products in inventory.")
+        return
+
+    # Sorting logic
+    try:
+        if sort_by == "name":
+            sorted_products = dict(sorted(products.items()))
+        elif sort_by == "price":
+            sorted_products = dict(sorted(products.items(), key=lambda x: x[1]["price"]))
+        elif sort_by == "quantity":
+            sorted_products = dict(sorted(products.items(), key=lambda x: x[1]["quantity"]))
+        else:
+            sorted_products = products
+    except KeyError as e:
+        print(f"Error while sorting: {e}")
+        sorted_products = products
+
+    print("\n{:<20} {:<10} {:<10}".format("Product Name", "Price", "Quantity"))
+    print("-" * 40)
+    for name, info in sorted_products.items():
+        print(f"{name:<20} {info['price']:<10.2f} {info['quantity']:<10}")
+
+# Add a new product
+def add_product(products):
+    name = input("Enter product name: ").strip()
+    if not name:
+        print("Product name cannot be empty!")
+        return
+    if name in products:
+        print("Product already exists!")
+        return
+    try:
+        price = float(input("Enter product price: "))
+        if price < 0:
+            print("Price cannot be negative!")
+            return
+        quantity = int(input("Enter product quantity: "))
+        if quantity < 0:
+            print("Quantity cannot be negative!")
+            return
+        products[name] = {"price": price, "quantity": quantity}
+        save_products(products)
+        print(f"{name} added successfully!")
+    except ValueError:
+        print("Invalid input! Price and quantity must be numeric.")
+
+# Edit an existing product
+def edit_product(products):
+    name = input("Enter the product name to edit: ").strip()
+    if name not in products:
+        print("Product not found!")
+        return
+    try:
+        price = float(input("Enter new price: "))
+        if price < 0:
+            print("Price cannot be negative!")
+            return
+        quantity = int(input("Enter new quantity: "))
+        if quantity < 0:
+            print("Quantity cannot be negative!")
+            return
+        products[name] = {"price": price, "quantity": quantity}
+        save_products(products)
+        print(f"{name} updated successfully!")
+    except ValueError:
+        print("Invalid input! Price and quantity must be numeric.")
+
+# Delete a product
+def delete_product(products):
+    name = input("Enter the product name to delete: ").strip()
+    if name in products:
+        del products[name]
+        save_products(products)
+        print(f"{name} deleted successfully!")
+    else:
+        print("Product not found!")
+
+# Search for a product
+def search_product(products):
+    query = input("Enter product name to search: ").strip()
+    results = {name: info for name, info in products.items() if query.lower() in name.lower()}
+    if results:
+        display_products(results)
+    else:
+        print("No matching products found.")
+
+# Main menu
+def main():
+    products = load_products()
+
+    while True:
+        print("\nInventory System Menu:")
+        print("1. Add product")
+        print("2. Edit product")
+        print("3. Delete product")
+        print("4. Display products")
+        print("5. Search product")
+        print("6. Sort products")
+        print("7. Exit")
+        choice = input("Enter your choice: ").strip()
+
+        if choice == "1":
+            add_product(products)
+        elif choice == "2":
+            edit_product(products)
+        elif choice == "3":
+            delete_product(products)
+        elif choice == "4":
+            display_products(products)
+        elif choice == "5":
+            search_product(products)
+        elif choice == "6":
+            sort_by = input("Sort by (name/price/quantity): ").strip().lower()
+            if sort_by in ["name", "price", "quantity"]:
+                display_products(products, sort_by=sort_by)
+            else:
+                print("Invalid sort option!")
+        elif choice == "7":
+            while True:
+                confirm = input("Are you sure you want to exit? (y/n): ").strip().lower()
+                if confirm == "y":
+                    print("Exiting the program. Goodbye!")
+                    return
+                elif confirm == "n":
+                    break
+                else:
+                    print("Invalid input. Please enter 'y' or 'n'.")
+        else:
+            print("Invalid choice. Please try again.")
+
+# Running the program
+if __name__ == "__main__":
+    main()
